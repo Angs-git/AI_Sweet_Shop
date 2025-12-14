@@ -3,9 +3,18 @@ from sqlalchemy.orm import Session
 from ..database import SessionLocal
 from ..models import Sweet
 from ..deps import get_current_user, admin_only
+from pydantic import BaseModel
+
 
 
 router = APIRouter()
+
+class SweetCreate(BaseModel):
+    name: str
+    category: str
+    price: float
+    quantity: int
+
 
 
 def get_db():
@@ -17,22 +26,21 @@ def get_db():
 
 @router.post("/")
 def add_sweet(
-    name: str,
-    category: str,
-    price: float,
-    quantity: int,
+    sweet: SweetCreate,
     db: Session = Depends(get_db),
     admin=Depends(admin_only)
 ):
-    sweet = Sweet(
-        name=name,
-        category=category,
-        price=price,
-        quantity=quantity
+    new_sweet = Sweet(
+        name=sweet.name,
+        category=sweet.category,
+        price=sweet.price,
+        quantity=sweet.quantity
     )
-    db.add(sweet)
+    db.add(new_sweet)
     db.commit()
-    return sweet
+    db.refresh(new_sweet)
+    return new_sweet
+
 
 
 @router.get("/")
